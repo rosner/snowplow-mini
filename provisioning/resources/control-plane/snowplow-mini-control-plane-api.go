@@ -20,34 +20,82 @@
 package main
 
 import (
-    "github.com/emicklei/go-restful"
-    "io"
-    "net/http"
-    "log"
-    "os/exec"
-    "flag"
+  "io"
+  "net/http"
+  "log"
+  "os/exec"
+  "os"
+  "flag"
 )
 
-//global variable for script's path
+// script file names
+var restartServicesScript = "restart_SP_services.sh"
+
+// global variables for paths from flags
 var scriptsPath string
+var enrichmentsPath string
+var configPath string
 
 func main() {
-    scriptsPathFlag := flag.String("scriptsPath", "", "path for control-plane-api scripts")
-    flag.Parse()
-    scriptsPath = *scriptsPathFlag
+  scriptsPathFlag := flag.String("scriptsPath", "", "path for control-plane-api scripts")
+  enrichmentsPathFlag := flag.String("enrichmentsPath", "", "path for enrichment files")
+  configPathFlag := flag.String("configPath", "", "path for config files")
+  flag.Parse()
+  scriptsPath = *scriptsPathFlag
+  enrichmentsPath = *enrichmentsPathFlag
+  configPath = *configPathFlag
 
-    ws := new(restful.WebService)
-    ws.Route(ws.PUT("/restart-services").To(restartSPServices))
-    restful.Add(ws)
-    log.Fatal(http.ListenAndServe(":10000", nil))
+  http.HandleFunc("/restart-services", restartSPServices)
+  http.HandleFunc("/upload-enrichments", uploadEnrichments)
+  log.Fatal(http.ListenAndServe(":10000", nil))
 }
 
-func restartSPServices(req *restful.Request, resp *restful.Response) {
-    cmd := exec.Command("/bin/sh", scriptsPath + "/" +  "restart_SP_services.sh")
-    err := cmd.Run()
+func restartSPServices(resp http.ResponseWriter, req *http.Request) {
+  if (req.Method == "PUT") {
+    _, err := callRestartSPServicesScript()
     if err != nil {
-        io.WriteString(resp, "ERR")
-    } else { 
-    	io.WriteString(resp, "OK")
+      http.Error(resp, err.Error(), 400)
+      return
+    } else {
+      resp.WriteHeader(http.StatusOK)
+      io.WriteString(resp, "OK")
     }
+  }
+}
+
+func uploadEnrichments(resp http.ResponseWriter, req *http.Request) {
+  if req.Method == "POST" {
+    req.ParseMultipartForm(32 << 20)
+    file, handler, err := req.FormFile("enrichmentjson")
+    if err != nil {
+      http.Error(resp, err.Error(), 400)
+      return
+    }
+    defer file.Close()
+    f, err := os.OpenFile(enrichmentsPath + "/" + handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
+    if err != nil {
+      http.Error(resp, err.Error(), 400)
+      return
+    }
+    defer f.Close()
+    fileContentBytes, err := ioutil.ReadAll(file)
+    fileContent := string(fileContentBytes)
+
+    if !isJSON(fileContent) {
+      http.Error(resp, "JSON is not valid", 400)
+      return
+    }
+
+    io.WriteString(f, fileContent)
+    //restart SP services to get action the enrichments
+    _, err = callRestartSPServicesScript()
+    resp.WriteHeader(http.StatusOK)
+    if err != nil {
+      http.Error(resp, err.Error(), 400)
+      return
+    }
+    resp.WriteHeader(http.StatusOK)
+    io.WriteString(resp, "uploaded successfully")
+    return
+  }
 }
