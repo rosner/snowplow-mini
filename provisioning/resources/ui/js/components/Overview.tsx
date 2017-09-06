@@ -23,10 +23,10 @@ export class Overview extends React.Component<{}, {}> {
 
   public render() {
 
-    var collector: string = 'http://' + window.location.host;
-    var kibana: string = 'http://' + window.location.host + '/kibana/';
-    var head_plugin: string = 'http://' + window.location.host + '/elasticsearch/_plugin/head/';
-    var elasticsearch: string = 'http://' + window.location.host + '/elasticsearch';
+    var collector: string = location.protocol + '//' + window.location.host;
+    var kibana: string = location.protocol + '//' + window.location.host + '/kibana/';
+    var head_plugin: string = location.protocol + '//' + window.location.host + '/elasticsearch/_plugin/head/';
+    var elasticsearch: string = location.protocol + '//' + window.location.host + '/elasticsearch';
 
     return (
       <div className="tab-content">
