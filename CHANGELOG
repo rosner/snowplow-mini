@@ -1,3 +1,21 @@
+Version 0.4.0 (2017-xx-xx)
+--------------------------
+Use caddy server instead of nginx for serving Snowplow Mini dashboard (#130)
+Add Control Plane API call to return the Snowplow Mini version (#128)
+Ensure UI links adhere to the current protocol being used (#127)
+Use "wait_for" module instead of "pause" in ansible roles (#125)
+Show Control Plane notifications in-page using react-alert (#119)
+Add Control Plane API call to write domain name to Caddyfile for automatic TLS (#118)
+Add Control Plane API call to change username and password for basic HTTP authentication (#117)
+Add Control Plane API call to add apikey for Iglu authentication (#116)
+Refactor user_data.sh script to use Control Plane API (#113)
+Create index mappings on bootstrap (#104)
+Update Elasticsearch & Kibana to version 5.x (#79)
+Update Javascript tracker (#71)
+Add Control Plane API call to put your own custom enrichments in Snowplow Mini (#66)
+Add Control Plane API call to add external Iglu schema registry to snowplow-mini (#62)
+Switch to using NSQ rather than named pipes (#24)
+
 Version 0.3.0 (2017-08-30)
 --------------------------
 Get username and password for basic authentication via user_data.sh (#107)
