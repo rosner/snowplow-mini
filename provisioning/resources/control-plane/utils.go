@@ -25,6 +25,10 @@ import (
   "net"
   "os/exec"
   "context"
+  "regexp"
+  "errors"
+  "time"
+  "io/ioutil"
 )
 
 // restarts services
@@ -42,4 +46,86 @@ func callRestartSPServicesScript() (string, error){
 func isJSON(jsonString string) bool {
   var js map[string]interface{}
   return json.Unmarshal([]byte(jsonString), &js) == nil
+}
+
+// check if given URL is reachable
+func isUrlReachable(url string) bool {
+  _, err := http.Get("http://" + url)
+  if err != nil {
+    return false
+  }
+  return true
+}
+
+// check whether given UUID follows the correct format
+func isValidUuid(uuid string) bool {
+    r := regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$")
+    return r.MatchString(uuid)
+}
+
+// returns public IP if the host machine is EC2 instance
+func getPublicEC2IP() (string, error) {
+  // URL of the instance meta service of AWS EC2
+  var urlForCheckingPubIP = "http://169.254.169.254/latest/meta-data/public-ipv4"
+  var netClient = &http.Client{
+    Timeout: time.Second * 5,
+  }
+
+  resp, err := netClient.Get(urlForCheckingPubIP)
+  if err != nil {
+    return "", err
+  }
+
+  defer resp.Body.Close()
+  body, err := ioutil.ReadAll(resp.Body)
+
+  return string(body), nil
+}
+
+// get IP addresses of the given domain name
+func getDomainNameIP(domainName string) ([]string, error) {
+  var (
+    ipAddresses []string
+    ctx context.Context
+    cancel context.CancelFunc
+  )
+
+  ctx, cancel = context.WithCancel(context.Background())
+  defer cancel()
+
+  addrs, err := net.DefaultResolver.LookupIPAddr(ctx, domainName)
+  if err != nil {
+    return nil, err
+  }
+
+  for _, ipnet := range addrs {
+    if ipnet.IP.To4() != nil {
+      ipAddresses = append(ipAddresses, ipnet.IP.String())
+    }
+  }
+
+  return ipAddresses, nil
+}
+
+// return whether given domain name resolves to the host IP or not
+func checkHostDomainName(domainName string) error{
+  // if host machine is ec2 instance,
+  // public IP must be got from instance meta service of AWS EC2
+  hostIPAddress, err := getPublicEC2IP()
+  if err != nil {
+    return errors.New("Error while getting host ip addresses")
+  }
+
+  domainIPAdresses, err := getDomainNameIP(domainName)
+  if err != nil {
+    return errors.New("Error while getting ip addresses of domain")
+  }
+
+  for _, domainIP := range domainIPAdresses {
+    if domainIP == hostIPAddress {
+      return nil
+    }
+  }
+
+  return errors.New("Given domain name does not redirect to host")
 }

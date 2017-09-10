@@ -30,6 +30,7 @@ import (
 
 // script file names
 var restartServicesScript = "restart_SP_services.sh"
+var addExternalIgluServerScript = "add_external_iglu_server.sh"
 
 // global variables for paths from flags
 var scriptsPath string
@@ -47,6 +48,8 @@ func main() {
 
   http.HandleFunc("/restart-services", restartSPServices)
   http.HandleFunc("/upload-enrichments", uploadEnrichments)
+  http.HandleFunc("/add-external-iglu-server", addExternalIgluServer)
+  http.HandleFunc("/check-url", checkUrl)
   log.Fatal(http.ListenAndServe(":10000", nil))
 }
 
@@ -97,5 +100,50 @@ func uploadEnrichments(resp http.ResponseWriter, req *http.Request) {
     resp.WriteHeader(http.StatusOK)
     io.WriteString(resp, "uploaded successfully")
     return
+  }
+}
+
+func addExternalIgluServer(resp http.ResponseWriter, req *http.Request) {
+  if req.Method == "POST" {
+    req.ParseForm()
+    if len(req.Form["iglu_server_uri"]) == 0 {
+      http.Error(resp, "parameter iglu_server_uri is not given", 400)
+      return
+    }
+    if len(req.Form["iglu_server_apikey"]) == 0 {
+      http.Error(resp, "parameter iglu_server_apikey is not given", 400)
+      return
+    }
+    igluServerUri := req.Form["iglu_server_uri"][0]
+    igluServerApikey := req.Form["iglu_server_apikey"][0]
+
+    if !isUrlReachable(igluServerUri) {
+      http.Error(resp, "Given URL is not reachable", 400)
+      return
+    }
+    if !isValidUuid(igluServerApikey) {
+      http.Error(resp, "Given apikey is not valid UUID.", 400)
+      return
+    }
+
+    shellScriptCommand := []string{scriptsPath + "/" + addExternalIgluServerScript,
+                                    igluServerUri,
+                                    igluServerApikey,
+                                    configPath,
+                                    scriptsPath}
+    cmd := exec.Command("/bin/bash", shellScriptCommand...)
+    err := cmd.Run()
+    if err != nil {
+      http.Error(resp, err.Error(), 400)
+      return
+    }
+    //restart SP services to get action the external iglu server
+    _, err = callRestartSPServicesScript()
+    if err != nil {
+      http.Error(resp, err.Error(), 400)
+      return
+    }
+    resp.WriteHeader(http.StatusOK)
+    io.WriteString(resp, "added successfully")
   }
 }

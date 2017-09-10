@@ -70,6 +70,53 @@ else
   exit 1
 fi
 
+## add external iglu server test: success
+sudo cp $testEnv/orgConfig/iglu-resolver.json $testConfigDir/.
+external_test_uuid=$(uuidgen)
+iglu_server_uri="example.com"
+add_external_iglu_server_result=$(curl -s -o /dev/null -w "%{http_code}" -d "iglu_server_uri=$iglu_server_uri&iglu_server_apikey=$external_test_uuid" localhost:10000/add-external-iglu-server)
+sleep 2
+
+uuid_grep_res=$(cat $testConfigDir/iglu-resolver.json | grep $external_test_uuid)
+iglu_server_uri_grep_res=$(cat $testConfigDir/iglu-resolver.json | grep $iglu_server_uri)
+
+if [[ "${add_external_iglu_server_result}" -eq 200 ]] &&
+   [[ "${uuid_grep_res}" != "" ]] &&
+   [[ "${iglu_server_uri_grep_res}" != "" ]] ;then
+  echo "Adding external Iglu Server success test returned as expected."
+else
+  echo "Adding external Iglu Server success test did not return as expected."
+  exit 1
+fi
+
+## add external iglu server test: invalid UUID format fail
+sudo cp $testEnv/orgConfig/iglu-resolver.json $testConfigDir/.
+external_test_uuid="123"
+iglu_server_uri="example.com"
+add_external_iglu_server_result=$(curl -s -o /dev/null -w "%{http_code}" -d "iglu_server_uri=$iglu_server_uri&iglu_server_apikey=$external_test_uuid" localhost:10000/add-external-iglu-server)
+sleep 2
+
+if [[ "${add_external_iglu_server_result}" -eq 400 ]];then
+  echo "Adding external Iglu Server invalid UUID format test returned as expected."
+else
+  echo "Adding external Iglu Server invalid UUID format test did not return as expected."
+  exit 1
+fi
+
+## add external iglu server test: down Iglu URL fail
+sudo cp $testEnv/orgConfig/iglu-resolver.json $testConfigDir/.
+external_test_uuid="123"
+iglu_server_uri="downiglu"
+add_external_iglu_server_result=$(curl -s -o /dev/null -w "%{http_code}" -d "iglu_server_uri=$iglu_server_uri&iglu_server_apikey=$external_test_uuid" localhost:10000/add-external-iglu-server)
+sleep 2
+
+if [[ "${add_external_iglu_server_result}" -eq 400 ]];then
+  echo "Adding external Iglu Server down Iglu URL test returned as expected."
+else
+  echo "Adding external Iglu Server down Iglu URL test did not return as expected."
+  exit 1
+fi
+
 sudo cp $testInit/snowplow_mini_control_plane_api_original_init /etc/init.d/snowplow_mini_control_plane_api
 sudo /etc/init.d/snowplow_mini_control_plane_api restart
 

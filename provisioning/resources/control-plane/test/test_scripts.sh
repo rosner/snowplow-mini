@@ -52,6 +52,23 @@ else
   exit 1
 fi
 
+## add external iglu server test
+sudo cp $testEnv/orgConfig/iglu-resolver.json $testConfigDir/.
+external_test_uuid=$(uuidgen)
+iglu_server_uri="testigluserveruri.com"
+
+sudo $scripts/$addExternalIgluServerScript $iglu_server_uri $external_test_uuid $testConfigDir $scripts >> /dev/null
+res=$?
+
+written_apikey=$(diff $testConfigDir/iglu-resolver.json $testEnv/expectedConfig/iglu-resolver-external-iglu.json | grep $external_test_uuid)
+
+if [[ "${res}" -eq 0 ]] && [[ "${written_apikey}" != "" ]];then
+  echo "Adding external Iglu Server script is working correctly."
+else
+  echo "Adding external Iglu Server script is not working correctly."
+  exit 1
+fi
+
 #remove test control plane directory after testing is done
 sudo rm -rf $testControlPlaneDir
 

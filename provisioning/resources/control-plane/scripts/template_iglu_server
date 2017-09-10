@@ -1,0 +1,13 @@
+      {
+        "name": "Iglu Server",
+        "priority": 0,
+        "vendorPrefixes": [
+          "com.snowplowanalytics"
+        ],
+        "connection": {
+          "http": {
+            "uri": "PLACEHOLDER",
+            "apikey": "PLACEHOLDER"
+          }
+        }
+      },
