@@ -117,6 +117,34 @@ else
   exit 1
 fi
 
+## add Iglu Server super uuid test: success
+sudo cp $testEnv/orgConfig/iglu-resolver.json $testConfigDir/.
+iglu_server_super_uuid=$(uuidgen)
+add_super_uuid_result=$(curl -s -o /dev/null -w "%{http_code}" -d "iglu_server_super_uuid=$iglu_server_super_uuid" localhost:10000/add-iglu-server-super-uuid)
+sleep 2
+
+grep_res=$(cat $testConfigDir/iglu-resolver.json | grep $iglu_server_super_uuid)
+
+if [[ "${add_super_uuid_result}" -eq 200 ]] && [[ "${grep_res}" != "" ]];then
+  echo "Adding Iglu Server super uuid success test returned as expected."
+else
+  echo "Adding Iglu Server super uuid success test did not return as expected."
+  exit 1
+fi
+
+## add Iglu Server super uuid test: invalid UUID format fail
+sudo cp $testEnv/orgConfig/iglu-resolver.json $testConfigDir/.
+iglu_server_super_uuid="123"
+add_super_uuid_result=$(curl -s -o /dev/null -w "%{http_code}" -d "iglu_server_super_uuid=$iglu_server_super_uuid" localhost:10000/add-iglu-server-super-uuid)
+sleep 2
+
+if [[ "${add_super_uuid_result}" -eq 400 ]];then
+  echo "Adding Iglu Server super uuid invalid UUID format fail test returned as expected."
+else
+  echo "Adding Iglu Server super uuid invalid UUID format fail test did not return as expected."
+  exit 1
+fi
+
 sudo cp $testInit/snowplow_mini_control_plane_api_original_init /etc/init.d/snowplow_mini_control_plane_api
 sudo /etc/init.d/snowplow_mini_control_plane_api restart
 

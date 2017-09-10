@@ -69,6 +69,22 @@ else
   exit 1
 fi
 
+## add Iglu Server super uuid test
+sudo cp $testEnv/orgConfig/iglu-resolver.json $testConfigDir/.
+iglu_server_super_uuid="04577adf-6dce-49d7-8cbb-0ffdf83304de"
+
+sudo $scripts/$addIgluSuperUuidScript $iglu_server_super_uuid $testConfigDir >> /dev/null
+res=$?
+
+diff_test_expected=$(diff $testConfigDir/iglu-resolver.json $testEnv/expectedConfig/iglu-resolver-add-super-uuid.json)
+
+if [[ "${res}" -eq 0 ]] && [[ "${diff_test_expected}" == "" ]];then
+  echo "Adding Iglu Server super uuid script is working correctly."
+else
+  echo "Adding Iglu Server super uuid script is not working correctly."
+  exit 1
+fi
+
 #remove test control plane directory after testing is done
 sudo rm -rf $testControlPlaneDir
 

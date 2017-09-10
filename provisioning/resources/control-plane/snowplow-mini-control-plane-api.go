@@ -31,6 +31,7 @@ import (
 // script file names
 var restartServicesScript = "restart_SP_services.sh"
 var addExternalIgluServerScript = "add_external_iglu_server.sh"
+var addIgluSuperUUIDScript = "add_iglu_server_super_uuid.sh"
 
 // global variables for paths from flags
 var scriptsPath string
@@ -49,6 +50,7 @@ func main() {
   http.HandleFunc("/restart-services", restartSPServices)
   http.HandleFunc("/upload-enrichments", uploadEnrichments)
   http.HandleFunc("/add-external-iglu-server", addExternalIgluServer)
+  http.HandleFunc("/add-iglu-server-super-uuid", addIgluServerSuperUUID)
   http.HandleFunc("/check-url", checkUrl)
   log.Fatal(http.ListenAndServe(":10000", nil))
 }
@@ -138,6 +140,38 @@ func addExternalIgluServer(resp http.ResponseWriter, req *http.Request) {
       return
     }
     //restart SP services to get action the external iglu server
+    _, err = callRestartSPServicesScript()
+    if err != nil {
+      http.Error(resp, err.Error(), 400)
+      return
+    }
+    resp.WriteHeader(http.StatusOK)
+    io.WriteString(resp, "added successfully")
+  }
+}
+
+func addIgluServerSuperUUID(resp http.ResponseWriter, req *http.Request) {
+  if req.Method == "POST" {
+    req.ParseForm()
+    if len(req.Form["iglu_server_super_uuid"]) == 0 {
+      http.Error(resp, "parameter iglu_server_super_uuid is not given", 400)
+      return
+    }
+    igluServerSuperUUID := req.Form["iglu_server_super_uuid"][0]
+    if !isValidUuid(igluServerSuperUUID) {
+      http.Error(resp, "Given apikey is not valid UUID", 400)
+      return
+    }
+    shellScriptCommand := []string{scriptsPath + "/" + addIgluSuperUUIDScript,
+                                   igluServerSuperUUID,
+                                   configPath}
+    cmd := exec.Command("/bin/bash", shellScriptCommand...)
+    err := cmd.Run()
+    if err != nil {
+      http.Error(resp, err.Error(), 400)
+      return
+    }
+    //restart SP services to get action the added Iglu apikey
     _, err = callRestartSPServicesScript()
     if err != nil {
       http.Error(resp, err.Error(), 400)
