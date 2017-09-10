@@ -32,6 +32,7 @@ import (
 var restartServicesScript = "restart_SP_services.sh"
 var addExternalIgluServerScript = "add_external_iglu_server.sh"
 var addIgluSuperUUIDScript = "add_iglu_server_super_uuid.sh"
+var changeUsernameAndPasswordScript = "submit_username_password_for_basic_auth.sh"
 
 // global variables for paths from flags
 var scriptsPath string
@@ -51,6 +52,7 @@ func main() {
   http.HandleFunc("/upload-enrichments", uploadEnrichments)
   http.HandleFunc("/add-external-iglu-server", addExternalIgluServer)
   http.HandleFunc("/add-iglu-server-super-uuid", addIgluServerSuperUUID)
+  http.HandleFunc("/change-username-and-password", changeUsernameAndPassword)
   http.HandleFunc("/check-url", checkUrl)
   log.Fatal(http.ListenAndServe(":10000", nil))
 }
@@ -179,5 +181,34 @@ func addIgluServerSuperUUID(resp http.ResponseWriter, req *http.Request) {
     }
     resp.WriteHeader(http.StatusOK)
     io.WriteString(resp, "added successfully")
+  }
+}
+
+func changeUsernameAndPassword(resp http.ResponseWriter, req *http.Request) {
+  if req.Method == "POST" {
+    req.ParseForm()
+    if len(req.Form["new_username"]) == 0 {
+      http.Error(resp, "parameter new_username is not given", 400)
+      return
+    }
+    if len(req.Form["new_password"]) == 0 {
+      http.Error(resp, "parameter new_password is not given", 400)
+      return
+    }
+    newUsername := req.Form["new_username"][0]
+    newPassword := req.Form["new_password"][0]
+
+    shellScriptCommand := []string{scriptsPath + "/" + changeUsernameAndPasswordScript,
+                                   newUsername,
+                                   newPassword,
+                                   configPath}
+    cmd := exec.Command("/bin/bash", shellScriptCommand...)
+    err := cmd.Run()
+    if err != nil {
+      http.Error(resp, err.Error(), 400)
+      return
+    }
+    resp.WriteHeader(http.StatusOK)
+    io.WriteString(resp, "changed successfully")
   }
 }

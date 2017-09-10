@@ -145,6 +145,19 @@ else
   exit 1
 fi
 
+## Change username and password for basic http authentication test
+sudo cp $testEnv/orgConfig/Caddyfile $testConfigDir/.
+change_uname_pass_result=$(curl -s -o /dev/null -w "%{http_code}" -d 'new_username=test_username&new_password=test_password' localhost:10000/change-username-and-password)
+sleep 2
+diff_test_expected=$(diff $testConfigDir/Caddyfile $testEnv/expectedConfig/Caddyfile_change_username_password)
+
+if [[ "${change_uname_pass_result}" -eq 200 ]] && [[ "${diff_test_expected}" == "" ]];then
+  echo "Changing username and password is working correctly."
+else
+  echo "Changing username and password is not working correctly."
+  exit 1
+fi
+
 sudo cp $testInit/snowplow_mini_control_plane_api_original_init /etc/init.d/snowplow_mini_control_plane_api
 sudo /etc/init.d/snowplow_mini_control_plane_api restart
 

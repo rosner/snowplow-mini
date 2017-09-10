@@ -23,6 +23,7 @@ import RestartServicesSection from "./ControlPlaneComponents/RestartServices";
 import UploadEnrichmentsForm from "./ControlPlaneComponents/UploadEnrichments";
 import AddExternalIgluServerForm from "./ControlPlaneComponents/AddExternalIgluServer";
 import AddIgluServerSuperUUIDForm from "./ControlPlaneComponents/AddIgluServerSuperUUID";
+import ChangeUsernamePasswordForm from "./ControlPlaneComponents/ChangeUsernamePassword";
 
 export class ControlPlane extends React.Component<{}, {}> {
 
@@ -34,6 +35,7 @@ export class ControlPlane extends React.Component<{}, {}> {
         <UploadEnrichmentsForm />
         <AddExternalIgluServerForm />
         <AddIgluServerSuperUUIDForm />
+        <ChangeUsernamePasswordForm />
       </div>
     );
   }

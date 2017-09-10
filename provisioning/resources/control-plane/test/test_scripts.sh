@@ -85,6 +85,32 @@ else
   exit 1
 fi
 
+## Change username and password for basic http authentication test
+sudo cp $testEnv/orgConfig/Caddyfile $testConfigDir/.
+new_username=test_username
+new_password=test_password
+
+sudo $scripts/$changeUsernameAndPasswordScript $new_username $new_password $testConfigDir >> /dev/null
+res=$?
+
+diff_test_expected=$(diff $testConfigDir/Caddyfile $testEnv/expectedConfig/Caddyfile_change_username_password)
+
+if [[ "${res}" -eq 0 ]] && [[ "${diff_test_expected}" == "" ]];then
+  echo "Changing username and password script is working correctly."
+else
+  echo "Changing username and password script is not working correctly."
+  exit 1
+fi
+
+diff_test_expected=$(diff $testConfigDir/Caddyfile $testEnv/expectedConfig/Caddyfile_add_domain_name_tls_off)
+
+if [[ "${add_domain_name_tls_off_result}" -eq 0 ]] && [[ "${diff_test_expected}" == "" ]];then
+  echo "Adding domain name script with tls off is working correctly."
+else
+  echo "Adding domain name script with tls off is not working correctly."
+  exit 1
+fi
+
 #remove test control plane directory after testing is done
 sudo rm -rf $testControlPlaneDir
 
