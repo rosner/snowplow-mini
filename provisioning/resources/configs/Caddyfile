@@ -43,3 +43,7 @@
 *:3001 {
   root /home/ubuntu/snowplow/elasticsearch/elasticsearch-head
 }
+
+*:3000 {
+  root /home/ubuntu/snowplow/ui
+}
