@@ -1,0 +1,191 @@
+---
+- include_vars: ../../common_vars.yml
+
+- name: Set variables
+  set_fact:
+    kinesis_package: 'snowplow_kinesis_r85_metamorphosis.zip'
+    es_loader_package: 'snowplow_elasticsearch_loader_http_0.10.0_rc1.zip'
+    iglu_server_package: 'iglu_server_0.2.0.zip'
+    kibana_v: '5.5.2'
+    elasticsearch_v: '5.5.2'
+    nsq_package: 'nsq-1.0.0-compat.linux-amd64.go1.8.tar.gz'
+    nsq_bin_dir: 'nsq-1.0.0-compat.linux-amd64.go1.8/bin'
+    control_plane_dir: '{{playbook_dir}}/resources/control-plane'
+
+- name: Install unzip
+  become: yes
+  apt:
+    name: "unzip"
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Add Java 8 repository
+  become: yes
+  apt_repository:
+    repo: 'ppa:webupd8team/java'
+    state: present
+
+- name: Signed Oracle License
+  become: yes
+  shell: "echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections"
+  register: oracle_license_signed
+
+- name: Install Java 8
+  become: yes
+  apt:
+    name: oracle-java8-installer
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+  when: oracle_license_signed|changed
+
+- name: Copy Control API to executables dir
+  become: yes
+  synchronize:
+    src: "{{executables_dir}}/snowplow-mini-control-plane-api"
+    dest: "{{executables_dir}}"
+
+- name: Copy Control API scripts to the scripts' directory
+  become: yes
+  synchronize:
+    src: "{{control_plane_dir}}/scripts/"
+    dest: "{{scripts_dir}}/snowplow-mini-control-plane-api-scripts"
+
+- name: Copy VERSION file to /home/ubuntu/snowplow for Control API
+  become: yes
+  synchronize:
+    src: "{{playbook_dir}}/../VERSION"
+    dest: "{{main_dir}}"
+
+#- name: Check Kinesis Packages
+#  stat:
+#    path: "{{staging_dir}}/{{kinesis_package}}"
+#  register: check_kinesis_packages_result
+
+#- name: Download Kinesis Packages
+#  get_url:
+#    url: "http://dl.bintray.com/snowplow/snowplow-generic/{{kinesis_package}}"
+#    dest: "{{staging_dir}}"
+#  when: check_kinesis_packages_result.stat.exists == False
+#  register: kinesis_packages_downloaded
+
+#- name: Unzip downloaded Kinesis Packages
+#  shell: "unzip {{staging_dir}}/{{kinesis_package}} -d {{executables_dir}}"
+#  when: kinesis_packages_downloaded|changed
+
+# this section will be removed after new version of the snowplow-apps
+# is placed on the bintray
+- name: Copy snowplow-apps to the executables dir
+  become: yes
+  block:
+    - synchronize:
+        src: "{{playbook_dir}}/resources/snowplow-apps/"
+        dest: "{{executables_dir}}"
+
+- name: Check Elasticsearch Loader
+  stat:
+    path: "{{staging_dir}}/{{es_loader_package}}"
+  register: check_es_loader_result
+
+- name: Download Elasticsearch Loader
+  get_url:
+    url: "http://bintray.com/artifact/download/snowplow/snowplow-generic/{{es_loader_package}}"
+    dest: "{{staging_dir}}"
+  when: check_es_loader_result.stat.exists == False
+  register: es_loader_downloaded
+
+- name: Unzip downloaded Elasticsearch Loader
+  shell: "unzip {{staging_dir}}/{{es_loader_package}} -d {{executables_dir}}"
+  when: es_loader_downloaded|changed
+
+- name: Check Iglu Server
+  stat:
+    path: "{{staging_dir}}/{{iglu_server_package}}"
+  register: check_iglu_server_result
+
+- name: Download Iglu Server
+  get_url:
+    url: "http://bintray.com/artifact/download/snowplow/snowplow-generic/{{iglu_server_package}}"
+    dest: "{{staging_dir}}"
+  when: check_iglu_server_result.stat.exists == False
+  register: iglu_server_downloaded
+
+- name: Unzip downloaded Iglu Server
+  shell: "unzip {{staging_dir}}/{{iglu_server_package}} -d {{executables_dir}}"
+  when: iglu_server_downloaded|changed
+  register: iglu_server_extracted
+
+- name: Download NSQ
+  get_url:
+    url: "https://s3.amazonaws.com/bitly-downloads/nsq/{{nsq_package}}"
+    dest: "{{staging_dir}}"
+
+- name: Unzip downloaded NSQ
+  shell: "tar xvfz {{staging_dir}}/{{nsq_package}} --directory {{staging_dir}}"
+
+- name: Copy NSQ binaries to executables_dir
+  shell: "cp {{staging_dir}}/{{nsq_bin_dir}}/nsqd {{staging_dir}}/{{nsq_bin_dir}}/nsqlookupd {{executables_dir}}"
+
+- name: Create snowplow user on Postgresql
+  become: true
+  become_user: postgres
+  postgresql_user:
+    name: snowplow
+    password: snowplow
+
+- name: Create iglu db on Postgresql
+  become: true
+  become_user: postgres
+  postgresql_db:
+    name: iglu
+    owner: snowplow
+
+- name: Download Elasticsearch
+  become: yes
+  shell: "wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.2.deb -P {{staging_dir}}"
+
+- name: Install Elasticsearch
+  become: yes
+  shell: "dpkg --force-all -i {{staging_dir}}/elasticsearch-{{elasticsearch_v}}.deb"
+
+- name: Change config of the Elasticsearch
+  become: yes
+  shell: "cat {{es_dir}}/elasticsearch.yml >> /etc/elasticsearch/elasticsearch.yml"
+
+- name: Install Git for downloading ES Head Plugin
+  become: yes
+  apt:
+    name: git
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Download Elasticsearch Head Plugin
+  become: yes
+  shell: "git clone https://github.com/mobz/elasticsearch-head.git {{es_dir}}/elasticsearch-head"
+
+- name: Download Kibana
+  become: yes
+  shell: "wget https://artifacts.elastic.co/downloads/kibana/kibana-{{kibana_v}}-amd64.deb -P {{staging_dir}}"
+
+- name: Install Kibana
+  become: yes
+  shell: "dpkg -i {{staging_dir}}/kibana-{{kibana_v}}-amd64.deb"
+
+- name: Change config of the Kibana
+  become: yes
+  shell: "cat {{es_dir}}/kibana.yml >> /etc/kibana/kibana.yml"
+
+- name: Copy Caddy executable to executables dir
+  become: yes
+  environment:
+    PATH: "{{ lookup('env','PATH') }}:{{ go_bin }}"
+    GOPATH: "{{ go_path }}"
+  synchronize:
+    src: "{{executables_dir}}/caddy"
+    dest: "{{executables_dir}}"
+
+- name: Set owner of the main directory
+  become: yes
+  shell: "chown -R ubuntu:ubuntu {{main_dir}}"

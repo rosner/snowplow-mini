@@ -9,9 +9,9 @@
 # Description:       Enable service provided by daemon.
 ### END INIT INFO
 
-dir="/usr/local/bin"
+dir="/home/ubuntu/snowplow/bin"
 
-cmd="caddy -conf /home/ubuntu/snowplow/configs/Caddyfile"
+cmd="./caddy -conf /home/ubuntu/snowplow/configs/Caddyfile"
 user=""
 
 name="caddy_server"
@@ -31,6 +31,7 @@ case "$1" in
         echo "Already started"
     else
         echo "Starting $name"
+        cd $dir
         if [ -z "$user" ]; then
             sudo $cmd &
         else
