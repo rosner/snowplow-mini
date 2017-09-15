@@ -14,14 +14,6 @@
     },
     "mappings": {
         "good": {
-            "_timestamp" : {
-                "enabled" : "yes",
-                "path" : "collector_tstamp"
-            },
-            "_ttl": {
-              "enabled": true,
-              "default": "604800000"
-            },
             "properties": {
                 "app_id": {
                     "type": "string",

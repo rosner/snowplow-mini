@@ -5,11 +5,12 @@
     /kibana
     /elasticsearch
     /control-plane
-    /_plugin
+    /elasticsearch-head
   }
   redir /home /home/
   redir /kibana /kibana/
   redir /iglu-server /iglu-server/
+  redir /elasticsearch-head /elasticsearch-head/
 
   proxy / localhost:8080
 
@@ -29,9 +30,16 @@
   proxy /elasticsearch localhost:9200 {
     without /elasticsearch
   }
-  proxy /_plugin localhost:9200
+  
+  proxy /elasticsearch-head localhost:3001 {
+    without /elasticsearch-head
+  }
 
   proxy /control-plane localhost:10000 {
     without /control-plane
   }
+}
+
+*:3001 {
+  root /home/ubuntu/snowplow/elasticsearch/elasticsearch-head
 }

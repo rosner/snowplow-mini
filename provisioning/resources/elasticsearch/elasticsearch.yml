@@ -1,0 +1,10 @@
+# Set the bind address to a specific IP (IPv4 or IPv6):
+#
+network.host: 0.0.0.0
+
+# For elasticsearch-head
+# More information can be found in here:
+# https://github.com/mobz/elasticsearch-head#enable-cors-in-elasticsearch
+#
+http.cors.enabled: true
+http.cors.allow-origin: "*"

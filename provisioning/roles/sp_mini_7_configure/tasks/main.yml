@@ -32,6 +32,7 @@
     name: nsqlookupd_init 
     state: started
   register: NsqlookupdStarted
+
 - name: Wait the other services to start
   wait_for:
     port: "{{item}}"
@@ -50,7 +51,7 @@
 
 - name: make "good" index pattern default
   shell: >
-      curl -XPUT http://localhost:9200/.kibana/config/4.0.1 -d '{"defaultIndex" : "good"}'
+      curl -XPUT http://localhost:9200/.kibana/config/5.5.2 -d '{"defaultIndex" : "good"}'
 
 - name: Create new topic for RawEvents
   shell: "curl -X POST http://127.0.0.1:4151/topic/create?topic=RawEvents"

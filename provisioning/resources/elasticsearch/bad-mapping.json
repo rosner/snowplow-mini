@@ -14,14 +14,6 @@
     },
     "mappings": {
         "bad": {
-            "_timestamp" : {
-                "enabled" : "yes",
-                "path" : "failure_tstamp"
-            },
-            "_ttl": {
-              "enabled": true,
-              "default": "604800000"
-            },
             "properties": {
                 "errors": {
                     "properties": {

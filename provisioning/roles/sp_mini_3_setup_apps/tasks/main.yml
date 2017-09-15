@@ -6,7 +6,8 @@
     kinesis_package: 'snowplow_kinesis_r85_metamorphosis.zip'
     es_loader_package: 'snowplow_elasticsearch_loader_http_0.10.0_rc1.zip'
     iglu_server_package: 'iglu_server_0.2.0.zip'
-    kibana_v: '4.0.1'
+    kibana_v: '5.5.2'
+    elasticsearch_v: '5.5.2'
     nsq_package: 'nsq-1.0.0-compat.linux-amd64.go1.8.tar.gz'
     nsq_bin_dir: 'nsq-1.0.0-compat.linux-amd64.go1.8/bin'
 
@@ -133,41 +134,41 @@
     name: iglu
     owner: snowplow
 
+- name: Install Git for getting Elasticsearch Head plugin
+  become: yes
+  apt:
+    name: git
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+
 - name: Download Elasticsearch
   become: yes
-  shell: "wget https://download.elastic.co/elasticsearch/elasticsearch/elasticsearch-1.7.5.deb -P {{staging_dir}}"
+  shell: "wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.2.deb -P {{staging_dir}}"
 
 - name: Install Elasticsearch
   become: yes
-  shell: "dpkg -i {{staging_dir}}/elasticsearch-1.7.5.deb"
+  shell: "dpkg --force-all -i {{staging_dir}}/elasticsearch-{{elasticsearch_v}}.deb"
 
-- name: Install Elasticsearch Head Plugin
+- name: Change config of the Elasticsearch
   become: yes
-  shell: "/usr/share/elasticsearch/bin/plugin --install mobz/elasticsearch-head"
+  shell: "cat {{es_dir}}/elasticsearch.yml >> /etc/elasticsearch/elasticsearch.yml"
 
-- name: Check Kibana
-  stat:
-    path: "{{staging_dir}}/{{kinesis_package}}"
-  register: check_kibana_result
+- name: Download Elasticsearch Head Plugin
+  become: yes
+  shell: "git clone https://github.com/mobz/elasticsearch-head.git {{es_dir}}/elasticsearch-head"
 
 - name: Download Kibana
-  get_url:
-    url: "https://download.elasticsearch.org/kibana/kibana/kibana-{{kibana_v}}-linux-x64.zip"
-    dest: "{{staging_dir}}"
-  when: check_kibana_result.stat.exists == False
-  register: kibana_downloaded
-
-- name: Unzip downloaded Kibana package
   become: yes
-  shell: "unzip {{staging_dir}}/kibana-{{kibana_v}}-linux-x64.zip -d /opt/"
-  when: kibana_downloaded|changed
+  shell: "wget https://artifacts.elastic.co/downloads/kibana/kibana-{{kibana_v}}-amd64.deb -P {{staging_dir}}"
 
-- name: Symlink for kibana
+- name: Install Kibana
   become: yes
-  file:
-    src: "/opt/kibana-{{kibana_v}}-linux-x64"
-    dest: "/opt/kibana"
-    state: link
+  shell: "dpkg -i {{staging_dir}}/kibana-{{kibana_v}}-amd64.deb"
+
+- name: Change config of the Kibana
+  become: yes
+  shell: "cat {{es_dir}}/kibana.yml >> /etc/kibana/kibana.yml"
 
 - name: Install nginx
   become: yes
