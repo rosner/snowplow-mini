@@ -18,7 +18,11 @@
 
 import React = require('react');
 import ReactDOM = require("react-dom");
+import AlertContainer from 'react-alert';
+import alertOptions from './AlertOptions'
 import axios from 'axios';
+
+var alertContainer = new AlertContainer();
 
 export default React.createClass({
   getInitialState () {
@@ -38,6 +42,7 @@ export default React.createClass({
 
   sendFormData()  {
     var _this = this;
+    var alertShow = alertContainer.show
     var domainName = this.state.domain_name
 
     // this function will be given to the config of the axios
@@ -65,10 +70,16 @@ export default React.createClass({
         domain_name: "",
       });
       if (response.status == 405) {
-        alert(response.data);
+        alertShow(response.data, {
+          time: 2000,
+          type: 'error'
+        });
       } else {
-        alert('You will lose connection after submitting the domain name \
-                   because of server restarting. Reload the page after submission.');
+        alertShow('You will lose connection after submitting the domain name \
+                   because of server restarting. Reload the page after submission.', {
+          time: 10000,
+          type: 'info'
+        });
       }
     })
     .catch(function (error) {
@@ -77,7 +88,11 @@ export default React.createClass({
   },
 
   handleSubmit(event) {
-    alert('Please wait...');
+    var alertShow = alertContainer.show
+    alertShow('Please wait...', {
+      time: 2000,
+      type: 'info'
+    });
     event.preventDefault();
     this.sendFormData();
   },
@@ -95,6 +110,7 @@ export default React.createClass({
             <button className="btn btn-primary" type="submit" disabled={this.state.disabled}>Submit</button>
           </div>
         </form>
+        <AlertContainer ref={a => alertContainer = a} {...alertOptions} />
       </div>
     );
   }

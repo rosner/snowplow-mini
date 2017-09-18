@@ -18,9 +18,13 @@
 
 import React = require('react');
 import ReactDOM = require("react-dom");
+import AlertContainer from 'react-alert';
+import alertOptions from './AlertOptions'
 import axios from 'axios';
 
-export default React.createClass({
+var alertContainer = new AlertContainer();
+
+export default React.createClass({ 
   getInitialState () {
     return {
       data: new FormData(),
@@ -33,6 +37,7 @@ export default React.createClass({
   },
 
   sendFormData()  {
+    var alertShow = alertContainer.show
     var _this = this
 
     _this.setState({
@@ -43,11 +48,17 @@ export default React.createClass({
     axios.post('/control-plane/upload-enrichments', this.state.data, {})
     .then(function (response) {
       setInitState()
-      alert('Uploaded successfully');
+      alertShow('Uploaded successfully', {
+        time: 2000,
+        type: 'success'
+      });
     })
     .catch(function (error) {
       setInitState()
-      alert('Error: ' + error.response.data);
+      alertShow('Error: ' + error.response.data, {
+        time: 2000,
+        type: 'error'
+      });
     });
 
     function setInitState() {
@@ -60,7 +71,11 @@ export default React.createClass({
   },
 
   handleSubmit(event) {
-    alert('Please wait...');
+    var alertShow = alertContainer.show
+    alertShow('Please wait...', {
+      time: 2000,
+      type: 'info'
+    });
     event.preventDefault();
     this.sendFormData();
   },
@@ -76,8 +91,9 @@ export default React.createClass({
           <div className="form-group">
             <button className="btn btn-primary" type="submit" disabled={this.state.disabled}>Upload enrichment json file</button>
           </div>
-        </form>
+        </form> 
+        <AlertContainer ref={a => alertContainer = a} {...alertOptions} />
       </div>
-    );
+    );  
   }
 });

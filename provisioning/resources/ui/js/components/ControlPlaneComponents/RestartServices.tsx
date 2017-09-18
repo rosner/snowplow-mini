@@ -18,9 +18,13 @@
 
 import React = require('react');
 import ReactDOM = require("react-dom");
+import AlertContainer from 'react-alert';
+import alertOptions from './AlertOptions'
 import axios from 'axios';
 
-export default React.createClass({
+var alertContainer = new AlertContainer();
+
+export default React.createClass({ 
   getInitialState () {
     return {
       disabled: false
@@ -29,34 +33,45 @@ export default React.createClass({
 
   restartAllServices(): void {
     var _this = this
+    var alertShow = alertContainer.show
 
     _this.setState({
       disabled: true
-    });
+    }); 
 
-    alert('Restarting all services...');
+    alertShow('Restarting all services...', {
+      time: 2000,
+      type: 'info'
+    });
 
     axios.put('/control-plane/restart-services', {}, {})
     .then(function (response) {
       _this.setState({
         disabled: false
       });
-      alert('All services are restarted successfully');
+      alertShow('All services are restarted successfully', {
+        time: 4000,
+        type: 'success'
+      });
     })
     .catch(function (error) {
       _this.setState({
         disabled: false
       });
-      alert('Error while restarting services, you need to hard reset your server');
+      alertShow('Error while restarting services, you need to hard reset your server', {
+        time: 4000,
+        type: 'error'
+      });
     });
   },
 
   render() {
     return (
-      <div className="tab-content">
+      <div className="tab-content">        
         <h4> Clear the cache for iglu schemas: </h4>
         <button type="button" onClick={this.restartAllServices} disabled={this.state.disabled}>Restart all services</button>
+        <AlertContainer ref={a => alertContainer = a} {...alertOptions} />
       </div>
-    );
+    );  
   }
 });

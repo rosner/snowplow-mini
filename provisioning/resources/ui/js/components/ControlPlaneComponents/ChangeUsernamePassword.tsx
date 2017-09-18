@@ -18,9 +18,13 @@
 
 import React = require('react');
 import ReactDOM = require("react-dom");
+import AlertContainer from 'react-alert';
+import alertOptions from './AlertOptions'
 import axios from 'axios';
 
-export default React.createClass({
+var alertContainer = new AlertContainer();
+
+export default React.createClass({ 
   getInitialState () {
     return {
       new_username: '',
@@ -43,6 +47,7 @@ export default React.createClass({
   },
 
   sendFormData()  {
+    var alertShow = alertContainer.show
     var _this = this
 
     // there is no need to make 'disabled' false after
@@ -55,23 +60,30 @@ export default React.createClass({
     var params = new URLSearchParams();
     params.append('new_username', this.state.new_username)
     params.append('new_password', this.state.new_password)
-
+    
     var _this = this
     axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded'
     axios.post('/control-plane/change-username-and-password', params, {})
     .then(function (response) {
-      // there is no need to this part because status will be
+      // there is no need to this part because status will be 
       // 400 in everytime and this will be handled by catch section
     })
     .catch(function (error) {
-      alert("You will lose connection after change the username and \
+      alertShow("You will lose connection after change the username and \
                 password because of server restarting. Reload the page  \
-                after submission and login with your new username and password.");
+                after submission and login with your new username and password.", {
+        time: 10000,
+        type: 'info'
+      });
     });
   },
 
   handleSubmit(event) {
-    alert('Please wait...');
+    var alertShow = alertContainer.show
+    alertShow('Please wait...', {
+      time: 2000,
+      type: 'info'
+    });
     event.preventDefault();
     this.sendFormData();
   },
@@ -92,7 +104,8 @@ export default React.createClass({
           <div className="form-group">
             <button className="btn btn-primary" type="submit" disabled={this.state.disabled}>Submit</button>
           </div>
-        </form>
+        </form> 
+        <AlertContainer ref={a => alertContainer = a} {...alertOptions} />
       </div>
     );
   }
