@@ -2,10 +2,10 @@
 
 sudo service elasticsearch start
 sudo service iglu_server_0.2.0 start
-sudo service snowplow_stream_collector_0.9.0 start
-sudo service snowplow_stream_enrich_0.10.0 start
-sudo service snowplow_elasticsearch_sink_good_0.8.0 start
-sudo service snowplow_elasticsearch_sink_bad_0.8.0 start
+sudo service snowplow_stream_collector start
+sudo service snowplow_stream_enrich start
+sudo service snowplow_elasticsearch_loader_good start
+sudo service snowplow_elasticsearch_loader_bad start
 sudo service kibana4_init start
 sudo service nginx start
 sleep 15
@@ -32,7 +32,7 @@ test_control_plane_dir="/home/ubuntu/snowplow/control-plane"
 $org_control_plane_dir/test/run_tests.sh $org_control_plane_dir $test_control_plane_dir
 control_plane_test_res=$?
 
-if [[ "${good_count}" -eq "10" ]] && [[ "${bad_count}" -eq "11" ]] &&
+if [[ "${good_count}" -eq "10" ]] && [[ "${bad_count}" -eq "10" ]] &&
    [[ "${control_plane_test_res}" -eq "0" ]]; then
   exit 0
 else
