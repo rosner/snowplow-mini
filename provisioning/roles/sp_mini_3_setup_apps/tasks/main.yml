@@ -51,6 +51,12 @@
     src: "{{playbook_dir}}/resources/control-plane/scripts/"
     dest: "{{scripts_dir}}/snowplow-mini-control-plane-api-scripts"
 
+- name: Copy VERSION file to /home/ubuntu/snowplow for Control API
+  become: yes
+  synchronize:
+    src: "{{playbook_dir}}/../VERSION"
+    dest: "{{main_dir}}"
+
 #- name: Check Kinesis Packages
 #  stat:
 #    path: "{{staging_dir}}/{{kinesis_package}}"

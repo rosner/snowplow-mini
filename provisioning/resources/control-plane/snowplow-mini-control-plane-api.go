@@ -26,6 +26,7 @@ import (
   "os/exec"
   "os"
   "flag"
+  "io/ioutil"
 )
 
 // script file names
@@ -39,15 +40,18 @@ var addDomainNameScript = "write_domain_name_to_caddyfile.sh"
 var scriptsPath string
 var enrichmentsPath string
 var configPath string
+var spMiniVersionFile string
 
 func main() {
   scriptsPathFlag := flag.String("scriptsPath", "", "path for control-plane-api scripts")
   enrichmentsPathFlag := flag.String("enrichmentsPath", "", "path for enrichment files")
   configPathFlag := flag.String("configPath", "", "path for config files")
+  spMiniVersionFlag := flag.String("spMiniVersionFile", "", "path for Snowplow Mini version file")
   flag.Parse()
   scriptsPath = *scriptsPathFlag
   enrichmentsPath = *enrichmentsPathFlag
   configPath = *configPathFlag
+  spMiniVersionFile = *spMiniVersionFlag
 
   http.HandleFunc("/restart-services", restartSPServices)
   http.HandleFunc("/upload-enrichments", uploadEnrichments)
@@ -55,6 +59,7 @@ func main() {
   http.HandleFunc("/add-iglu-server-super-uuid", addIgluServerSuperUUID)
   http.HandleFunc("/change-username-and-password", changeUsernameAndPassword)
   http.HandleFunc("/add-domain-name", addDomainName)
+  http.HandleFunc("/version", getSpminiVersion)
   log.Fatal(http.ListenAndServe(":10000", nil))
 }
 
@@ -245,5 +250,18 @@ func addDomainName(resp http.ResponseWriter, req *http.Request) {
     }
     resp.WriteHeader(http.StatusOK)
     io.WriteString(resp, "added successfully")
+  }
+}
+
+func getSpminiVersion(resp http.ResponseWriter, req *http.Request) {
+  if req.Method == "GET" {
+    versionBytes, err := ioutil.ReadFile(spMiniVersionFile)
+    if err != nil {
+      http.Error(resp, err.Error(), 400)
+      return
+    }
+    versionStr := string(versionBytes)
+    resp.WriteHeader(http.StatusOK)
+    io.WriteString(resp, versionStr)
   }
 }

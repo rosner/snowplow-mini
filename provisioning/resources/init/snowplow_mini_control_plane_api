@@ -10,7 +10,7 @@
 ### END INIT INFO
 
 dir="/home/ubuntu/snowplow/bin/"
-cmd="./snowplow-mini-control-plane-api -scriptsPath=/home/ubuntu/snowplow/scripts/snowplow-mini-control-plane-api-scripts -enrichmentsPath=/home/ubuntu/snowplow/configs/enrichments -configPath=/home/ubuntu/snowplow/configs"
+cmd="./snowplow-mini-control-plane-api -scriptsPath=/home/ubuntu/snowplow/scripts/snowplow-mini-control-plane-api-scripts -enrichmentsPath=/home/ubuntu/snowplow/configs/enrichments -configPath=/home/ubuntu/snowplow/configs -spMiniVersionFile=/home/ubuntu/snowplow/VERSION"
 user=""
 
 name="snowplow_mini_control_plane_api"
@@ -32,7 +32,7 @@ case "$1" in
         echo "Starting $name"
         cd "$dir"
         if [ -z "$user" ]; then
-            sudo $cmd & 
+            sudo $cmd &
         else
             sudo -u "$user" $cmd &
         fi
