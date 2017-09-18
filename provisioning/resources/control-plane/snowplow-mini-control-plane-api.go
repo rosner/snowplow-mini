@@ -33,6 +33,7 @@ var restartServicesScript = "restart_SP_services.sh"
 var addExternalIgluServerScript = "add_external_iglu_server.sh"
 var addIgluSuperUUIDScript = "add_iglu_server_super_uuid.sh"
 var changeUsernameAndPasswordScript = "submit_username_password_for_basic_auth.sh"
+var addDomainNameScript = "write_domain_name_to_caddyfile.sh"
 
 // global variables for paths from flags
 var scriptsPath string
@@ -53,7 +54,7 @@ func main() {
   http.HandleFunc("/add-external-iglu-server", addExternalIgluServer)
   http.HandleFunc("/add-iglu-server-super-uuid", addIgluServerSuperUUID)
   http.HandleFunc("/change-username-and-password", changeUsernameAndPassword)
-  http.HandleFunc("/check-url", checkUrl)
+  http.HandleFunc("/add-domain-name", addDomainName)
   log.Fatal(http.ListenAndServe(":10000", nil))
 }
 
@@ -210,5 +211,39 @@ func changeUsernameAndPassword(resp http.ResponseWriter, req *http.Request) {
     }
     resp.WriteHeader(http.StatusOK)
     io.WriteString(resp, "changed successfully")
+  }
+}
+
+func addDomainName(resp http.ResponseWriter, req *http.Request) {
+  if req.Method == "POST" {
+    req.ParseForm()
+    if len(req.Form["tls_status"]) == 0 {
+      http.Error(resp, "parameter tls_status is not given", 400)
+      return
+    }
+    if len(req.Form["domain_name"]) == 0 {
+      http.Error(resp, "parameter domain_name is not given", 400)
+      return
+    }
+    tlsStatus := req.Form["tls_status"][0]
+    domainName := req.Form["domain_name"][0]
+    err := checkHostDomainName(domainName)
+    if err != nil {
+      http.Error(resp, err.Error(), 405)
+      return
+    }
+
+    shellScriptCommand := []string{scriptsPath + "/" + addDomainNameScript,
+                                   tlsStatus,
+                                   domainName,
+                                   configPath}
+    cmd := exec.Command("/bin/bash", shellScriptCommand...)
+    err = cmd.Run()
+    if err != nil {
+      http.Error(resp, err.Error(), 405)
+      return
+    }
+    resp.WriteHeader(http.StatusOK)
+    io.WriteString(resp, "added successfully")
   }
 }

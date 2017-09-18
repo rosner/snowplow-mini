@@ -20,7 +20,7 @@ import React = require('react');
 import ReactDOM = require("react-dom");
 import axios from 'axios';
 
-export default React.createClass({ 
+export default React.createClass({
   getInitialState () {
     return {
       disabled: false
@@ -28,10 +28,11 @@ export default React.createClass({
   },
 
   restartAllServices(): void {
-    var _this = this    
+    var _this = this
+
     _this.setState({
       disabled: true
-    }); 
+    });
 
     alert('Restarting all services...');
 
@@ -52,10 +53,10 @@ export default React.createClass({
 
   render() {
     return (
-      <div className="tab-content">        
+      <div className="tab-content">
         <h4> Clear the cache for iglu schemas: </h4>
         <button type="button" onClick={this.restartAllServices} disabled={this.state.disabled}>Restart all services</button>
       </div>
-    );  
+    );
   }
 });

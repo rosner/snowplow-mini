@@ -23,50 +23,56 @@ import axios from 'axios';
 export default React.createClass({
   getInitialState () {
     return {
-      new_username: '',
-      new_password: '',
+      domain_name: '',
       disabled: false
     };
   },
 
   handleChange(evt) {
-    if (evt.target.name == 'new_username'){
+    if (evt.target.name == 'domain_name'){
       this.setState({
-        new_username: evt.target.value
-      });
-    }
-    else if (evt.target.name == 'new_password'){
-      this.setState({
-        new_password: evt.target.value
+        domain_name: evt.target.value
       });
     }
   },
 
   sendFormData()  {
-    var _this = this
+    var _this = this;
+    var domainName = this.state.domain_name
 
-    // there is no need to make 'disabled' false after
+    // this function will be given to the config of the axios
+    // When status isn't between 200 and 300, axios throws
+    // error as default. With this 'validateStatus' function,
+    // valid status interval changes to between 200 and 500
+    function validateStatus(status) {
+      return status >= 200 && status < 500
+    }
+
+    // there is no need to disabled false after
     // because connection will be lost after request is sent
-    // and page must be loaded again
+    // and page will be loaded again
     _this.setState({
       disabled: true
     });
-
     var params = new URLSearchParams();
-    params.append('new_username', this.state.new_username)
-    params.append('new_password', this.state.new_password)
+    params.append('domain_name', _this.state.domain_name);
+    params.append('tls_status', "on");
 
-    var _this = this
-    axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded'
-    axios.post('/control-plane/change-username-and-password', params, {})
+    axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
+    axios.post('/control-plane/add-domain-name', params, {validateStatus: validateStatus})
     .then(function (response) {
-      // there is no need to this part because status will be
-      // 400 in everytime and this will be handled by catch section
+      _this.setState({
+        domain_name: "",
+      });
+      if (response.status == 405) {
+        alert(response.data);
+      } else {
+        alert('You will lose connection after submitting the domain name \
+                   because of server restarting. Reload the page after submission.');
+      }
     })
     .catch(function (error) {
-      alert("You will lose connection after change the username and \
-                password because of server restarting. Reload the page  \
-                after submission and login with your new username and password.");
+        alert('Unexpected error, you need to hard reset the server');
     });
   },
 
@@ -79,15 +85,11 @@ export default React.createClass({
   render() {
     return  (
       <div className="tab-content">
-        <h4>Change username and password for basic http authentication: </h4>
+        <h4>Add domain name for TLS: </h4>
         <form action="" onSubmit={this.handleSubmit}>
           <div className="form-group">
-            <label htmlFor="new_username">Username: </label>
-            <input className="form-control" name="new_username" ref="new_username" required type="text" onChange={this.handleChange} value={this.state.new_username} />
-          </div>
-          <div className="form-group">
-            <label htmlFor="new_password">Password: </label>
-            <input className="form-control" name="new_password" ref="new_password" required type="password" onChange={this.handleChange} value={this.state.new_password} />
+            <label htmlFor="domain_name">Domain name: </label>
+            <input className="form-control" name="domain_name" ref="domain_name" required type="text" onChange={this.handleChange} value={this.state.domain_name} />
           </div>
           <div className="form-group">
             <button className="btn btn-primary" type="submit" disabled={this.state.disabled}>Submit</button>

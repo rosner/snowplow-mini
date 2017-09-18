@@ -102,6 +102,33 @@ else
   exit 1
 fi
 
+## Add domain name and tls on test
+sudo cp $testEnv/orgConfig/Caddyfile $testConfigDir/.
+
+tls_status="on"
+domain_name="test.com"
+
+sudo $scripts/$addDomainNameScript $tls_status $domain_name $testConfigDir >> /dev/null
+res=$?
+
+diff_test_expected=$(diff $testConfigDir/Caddyfile $testEnv/expectedConfig/Caddyfile_add_domain_name_tls_on)
+
+if [[ "${res}" -eq 0 ]] && [[ "${diff_test_expected}" == "" ]];then
+  echo "Adding domain name script with tls on is working correctly."
+else
+  echo "Adding domain name script with tls on is not working correctly."
+  exit 1
+fi
+
+## Add domain name and tls off test
+sudo cp $testEnv/orgConfig/Caddyfile $testConfigDir/.
+
+tls_status="off"
+domain_name="test.com"
+
+sudo $scripts/$addDomainNameScript $tls_status $domain_name $testConfigDir >> /dev/null
+res=$?
+
 diff_test_expected=$(diff $testConfigDir/Caddyfile $testEnv/expectedConfig/Caddyfile_add_domain_name_tls_off)
 
 if [[ "${add_domain_name_tls_off_result}" -eq 0 ]] && [[ "${diff_test_expected}" == "" ]];then
